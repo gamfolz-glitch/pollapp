@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}QR-код: {{ poll.title }}{% endblock %}
+
+{% block nav %}
+  <a href="/">Главная</a>
+  {% if user.is_authenticated %}
+    <a href="/dashboard/project/">Мои опросы</a>
+    <a href="/dashboard/project/{{ poll.id }}/">Управление опросом</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div style="max-width: 600px; margin: 0 auto;">
+    <div class="card" style="text-align: center;">
+      <h1 style="margin-bottom: 0.5rem;">📱 QR-код опроса</h1>
+      <h2 style="margin-bottom: 2rem; color: var(--text-light); font-size: 1.25rem;">{{ poll.title }}</h2>
+
+      <div style="background: white; padding: 2rem; border-radius: 0.75rem; border: 2px solid var(--border); display: inline-block; margin-bottom: 2rem;">
+        <img
+          src="/p/{{ poll.access_code }}/qr.png"
+          alt="QR код для опроса {{ poll.title }}"
+          width="300"
+          height="300"
+          style="display: block;"
+        />
+      </div>
+
+      <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
+        <p style="margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Публичная ссылка:</p>
+        <a href="{{ public_url }}" style="color: var(--primary); font-weight: 600; word-break: break-all; text-decoration: none;">
+          {{ public_url }}
+        </a>
+      </div>
+
+      <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
+        <p style="margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Код доступа:</p>
+        <code style="font-size: 1.25rem; padding: 0.5rem 1rem;">{{ poll.access_code }}</code>
+      </div>
+
+      <div class="flex" style="justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="/p/{{ poll.access_code }}/" class="btn btn-outline" target="_blank">
+          👁️ Открыть опрос
+        </a>
+        {% if user.is_authenticated %}
+          <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-secondary">
+            ⚙️ Управление
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 1.5rem; background: #f0f9ff; border-left: 4px solid var(--primary);">
+      <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">💡 Как использовать QR-код:</h3>
+      <ul style="margin-left: 1.5rem; color: var(--text-light);">
+        <li>Отсканируйте QR-код камерой телефона</li>
+        <li>Или распечатайте страницу и разместите в удобном месте</li>
+        <li>Пользователи смогут быстро перейти к опросу</li>
+      </ul>
+    </div>
+  </div>
+
+  <style>
+    @media print {
+      .header, .nav, footer, button, .btn {
+        display: none !important;
+      }
+      
+      .card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+      }
+    }
+  </style>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "dashboard/base.html" %}
+
+{% block dashboard_title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <!-- Назад -->
+  <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-outline" style="margin-bottom: 1.5rem; font-size: 0.875rem;">
+    ← Назад к опросу
+  </a>
+
+  <!-- Центрированный заголовок -->
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <h1 style="margin: 0 0 0.75rem; font-size: 1.75rem; font-weight: 600; color: var(--text);">
+      {{ title }}
+    </h1>
+    <p class="text-muted" style="margin: 0; font-size: 1rem;">
+      Добавление нового вопроса в опрос: <strong>{{ poll.title }}</strong>
+    </p>
+  </div>
+
+  <!-- Форма -->
+  <div class="card" style="max-width: 720px; margin: 0 auto; padding: 1.75rem;">
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Ошибки -->
+      {% if form.errors %}
+        <div class="form-errors" style="background: #fdf6f6; border: 1px solid #efcccc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+          <strong style="color: #d32f2f; display: block; margin-bottom: 0.5rem;">Исправьте ошибки:</strong>
+          <ul style="margin: 0; padding-left: 1.25rem; color: #c00; font-size: 0.9rem;">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- Текст вопроса -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="{{ form.text.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1.125rem; color: var(--text);">
+          Текст вопроса *
+        </label>
+        {{ form.text }}
+        {% if form.text.help_text %}
+          <small class="text-muted" style="display: block; margin-top: 0.375rem; font-size: 0.875rem;">
+            {{ form.text.help_text }}
+          </small>
+        {% endif %}
+      </div>
+
+      <!-- Тип вопроса -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="{{ form.kind.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1.125rem; color: var(--text);">
+          Тип вопроса *
+        </label>
+        {{ form.kind }}
+        <small class="text-muted" style="display: block; margin-top: 0.375rem; font-size: 0.875rem; line-height: 1.5;">
+          <strong>Текст</strong> — пользователь вводит произвольный текст.<br>
+          <strong>Одиночный выбор</strong> — можно выбрать только один вариант.<br>
+          <strong>Множественный выбор</strong> — можно выбрать несколько вариантов.
+        </small>
+      </div>
+
+      <!-- Порядок -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="{{ form.order.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1.125rem; color: var(--text);">
+          Порядок отображения
+        </label>
+        <input
+          type="number"
+          name="{{ form.order.html_name }}"
+          id="{{ form.order.id_for_label }}"
+          value="{{ form.order.value|default:1 }}"
+          class="form-control"
+          min="1"
+          required
+        >
+        <small class="text-muted" style="display: block; margin-top: 0.375rem; font-size: 0.875rem;">
+          Чем меньше число, тем выше вопрос в опросе. Нумерация начинается с <strong>1</strong>.
+        </small>
+      </div>
+      <!-- Тестовый вопрос -->
+      <div class="form-group" style="margin-bottom: 1.5rem; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <label for="{{ form.is_test_question.id_for_label }}" style="font-weight: 600; font-size: 1.125rem; color: #1e293b;">
+            🧪 Тестовый вопрос
+          </label>
+          {{ form.is_test_question }}
+        </div>
+        <small class="text-muted" style="display: block; font-size: 0.875rem; line-height: 1.5;">
+          Если включено — при прохождении опроса будет проверяться, правильно ли ответил пользователь.<br>
+          <strong>Важно:</strong> только для вопросов с вариантами ответов («Один» или «Несколько»).<br>
+          Для текстовых вопросов автоматическая проверка невозможна.
+        </small>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: center;">
+        <button type="submit" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; padding: 0.75rem 1.25rem;">
+          💾 Сохранить вопрос
+        </button>
+        <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-secondary" style="font-size: 1rem; padding: 0.75rem 1.25rem;">
+          Отмена
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "dashboard/base.html" %}
+
+{% block dashboard_title %}Ответы: {{ poll.title }}{% endblock %}
+
+{% block content %}
+  <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-outline" style="margin-bottom: 1.5rem;">← Назад к опросу</a>
+
+  <div class="flex flex-between" style="margin-bottom: 1.5rem;">
+    <div>
+      <h1> Ответы пользователей</h1>
+      <h2 style="color: var(--text-light); font-size: 1.25rem; font-weight: 400;">{{ poll.title }}</h2>
+    </div>
+    <a href="/dashboard/project/{{ poll.id }}/stats/" class="btn btn-success">
+      📊 Статистика
+    </a>
+  </div>
+
+  <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white;">
+    <div class="grid grid-2" style="gap: 1.5rem;">
+      <div style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">{{ total_submissions }}</div>
+        <div style="opacity: 0.9;">Всего отправок</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">{{ poll.access_code }}</div>
+        <div style="opacity: 0.9;">Код доступа</div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    
+    table th {
+      background: var(--bg);
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+      color: var(--text);
+    }
+    
+    table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    
+    table tr:hover {
+      background: var(--bg);
+    }
+    
+    .text-answer {
+      max-width: 500px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+
+  {% if text_questions %}
+    {% for item in text_questions %}
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border);">
+          <span style="background: var(--primary); color: white; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
+            📝
+          </span>
+          <h3 style="margin: 0; flex: 1;">{{ item.question.text }}</h3>
+        </div>
+
+        {% if item.rows %}
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 150px;">Пользователь</th>
+                  <th>Ответ</th>
+                  <th style="width: 180px;">Время отправки</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in item.rows %}
+                  <tr>
+                    <td>
+                      <strong>{{ r.username|default:"Анонимный пользователь" }}</strong>
+                    </td>
+                    <td>
+                      <div class="text-answer">{{ r.text }}</div>
+                    </td>
+                    <td style="color: var(--text-light); font-size: 0.875rem;">
+                      {{ r.created_at|date:"d.m.Y H:i" }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding: 2rem;">
+            <p style="color: var(--text-light);">Пока нет ответов на этот вопрос.</p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card empty-state">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+      <h3>В этом опросе нет текстовых вопросов</h3>
+      <p style="margin: 1rem 0; color: var(--text-light);">
+        Текстовые ответы отображаются здесь. Для вопросов с выбором вариантов смотрите статистику.
+      </p>
+      <a href="/dashboard/project/{{ poll.id }}/stats/" class="btn btn-primary">Перейти к статистике</a>
+    </div>
+  {% endif %}
+{% endblock %}

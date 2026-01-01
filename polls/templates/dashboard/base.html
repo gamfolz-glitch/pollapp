@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {% block dashboard_title %}{% endblock %}{% endblock %}
+
+{% block nav %}
+  <a href="/">Главная</a>
+
+  <a href="{% url 'polls:project_list' %}" 
+     class="{% if request.resolver_match.url_name == 'project_list' or request.resolver_match.url_name == 'project_detail' %}active{% endif %}">
+    📋 Мои опросы
+  </a>
+
+  <a href="{% url 'polls:project_new' %}" 
+     class="{% if request.resolver_match.url_name == 'project_new' %}active{% endif %}">
+    ➕ Создать опрос
+  </a>
+
+  <form method="post" action="{% url 'logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" style="background: none; border: none; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background 0.2s; font-weight: 500; font-size: inherit; font-family: inherit; cursor: pointer;">
+      Выйти ({{ user.username }})
+    </button>
+  </form>
+{% endblock %}

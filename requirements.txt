@@ -1,0 +1,14 @@
+Django>=5.0,<6.0
+qrcode[pil]>=7.4
+
+# Production / deployment
+gunicorn>=21.2
+whitenoise>=6.6
+dj-database-url>=2.1
+python-dotenv>=1.0
+
+# Optional: PostgreSQL driver for DATABASE_URL=postgres://...
+psycopg[binary]>=3.1
+
+# Dev tooling
+ruff>=0.7

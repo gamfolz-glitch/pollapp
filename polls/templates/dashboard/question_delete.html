@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+
+{% block dashboard_title %}Удалить вопрос{% endblock %}
+
+{% block content %}
+  <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-outline" style="margin-bottom: 1.5rem;">← Назад к опросу</a>
+
+  <div class="card" style="max-width: 600px; margin: 0 auto; border-left: 4px solid var(--danger);">
+    <h1 style="color: var(--danger); margin-bottom: 1rem;">⚠️ Удаление вопроса</h1>
+    
+    <div class="error" style="margin-bottom: 1.5rem;">
+      <strong>Внимание!</strong> Вопрос и все связанные с ним варианты ответов будут удалены. Все ответы пользователей на этот вопрос также будут удалены.
+    </div>
+
+    <div style="padding: 1.5rem; background: var(--bg); border-radius: 0.5rem; margin-bottom: 1.5rem;">
+      <h3 style="margin-bottom: 0.5rem;">{{ question.text }}</h3>
+      <p style="color: var(--text-light); font-size: 0.875rem;">
+        Тип: 
+        <span class="badge {% if question.kind == 'TEXT' %}badge-primary{% elif question.kind == 'SINGLE' %}badge-success{% else %}badge-warning{% endif %}">
+          {% if question.kind == 'TEXT' %}📝 Текст
+          {% elif question.kind == 'SINGLE' %}🔘 Одиночный выбор
+          {% else %}☑️ Множественный выбор
+          {% endif %}
+        </span>
+      </p>
+      <p style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;">
+        Опрос: <strong>{{ poll.title }}</strong>
+      </p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex" style="gap: 1rem;">
+        <button type="submit" class="btn btn-danger">
+          🗑️ Да, удалить вопрос
+        </button>
+        <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-secondary">
+          Отмена
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+

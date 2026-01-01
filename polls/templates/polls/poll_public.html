@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ poll.title }} - Опрос{% endblock %}
+
+{% block nav %}
+  <a href="/">Главная</a>
+  {% if user.is_authenticated %}
+    <a href="/dashboard/project/">Мои опросы</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
+      <h1 style="margin-bottom: 0.5rem;">{{ poll.title }}</h1>
+      {% if poll.description %}
+        <p style="color: var(--text-light); font-size: 1.125rem;">{{ poll.description }}</p>
+      {% endif %}
+    </div>
+
+    {% if errors %}
+      <div class="error" style="margin-bottom: 1.5rem;">
+        <strong>⚠️ Пожалуйста, исправьте ошибки:</strong>
+        <ul style="margin-top: 0.5rem;">
+          {% for e in errors %}
+            <li>{{ e.message }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% for q in questions %}
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
+            <span style="background: var(--primary); color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
+              {{ forloop.counter }}
+            </span>
+            <div style="flex: 1;">
+              <h3 style="margin-bottom: 0.5rem;">{{ q.text }}</h3>
+              {% if q.kind == 'TEXT' %}
+                <span class="badge badge-primary">📝 Текстовый ответ</span>
+              {% elif q.kind == 'SINGLE' %}
+                <span class="badge badge-success">🔘 Выберите один вариант</span>
+              {% else %}
+                <span class="badge badge-warning">☑️ Выберите один или несколько вариантов</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="margin-left: 2.75rem;">
+            {% if q.kind == 'TEXT' %}
+              <div class="form-group" style="margin-bottom: 0;">
+                <textarea name="q_{{ q.id }}" rows="4" placeholder="Введите ваш ответ здесь..." required></textarea>
+              </div>
+            {% elif q.kind == 'SINGLE' %}
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for c in q.choices.all %}
+                  <label style="display: flex; align-items: center; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;">
+                    <input type="radio" name="q_{{ q.id }}" value="{{ c.id }}" required style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem; cursor: pointer;">
+                    <span style="flex: 1;">{{ c.text }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            {% elif q.kind == 'MULTI' %}
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for c in q.choices.all %}
+                  <label style="display: flex; align-items: center; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;">
+                    <input type="checkbox" name="q_{{ q.id }}" value="{{ c.id }}" style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem; cursor: pointer;">
+                    <span style="flex: 1;">{{ c.text }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
+        <button type="submit" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+          ✅ Отправить ответы
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <style>
+    label:hover {
+      border-color: var(--primary) !important;
+      background: rgba(99, 102, 241, 0.05);
+    }
+    
+    input[type="radio"]:checked + span,
+    input[type="checkbox"]:checked + span {
+      font-weight: 600;
+    }
+    
+    label:has(input[type="radio"]:checked),
+    label:has(input[type="checkbox"]:checked) {
+      border-color: var(--primary) !important;
+      background: rgba(99, 102, 241, 0.1);
+    }
+  </style>
+{% endblock %}
+

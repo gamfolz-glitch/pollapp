@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Система опросов{% endblock %}
+
+{% block content %}
+  <div class="card" style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 2rem;">
+    <h1 style="color: white; margin-bottom: 1rem; font-size: 2.5rem;"> Система опросов</h1>
+    <p style="font-size: 1.25rem; opacity: 0.95; margin-bottom: 2rem;">
+      Создавайте опросы, собирайте ответы и анализируйте результаты
+    </p>
+    {% if not user.is_authenticated %}
+      <div class="flex" style="justify-content: center; gap: 1rem;">
+        <a href="/accounts/signup/" class="btn" style="background: white; color: #667eea; font-weight: 600;">
+          🚀 Регистрация
+        </a>
+        <a href="/accounts/login/" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white;">
+          Войти
+        </a>
+      </div>
+    {% else %}
+      <div class="flex" style="justify-content: center; gap: 1rem;">
+        <a href="/dashboard/project/" class="btn" style="background: white; color: #667eea; font-weight: 600;">
+           Мои опросы
+        </a>
+        <a href="/dashboard/project/new/" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid white;">
+          ➕ Создать опрос
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <h2 style="margin-bottom: 0.5rem;">Введите код опроса</h2>
+      <p style="color: var(--text-light);">
+        Введите код доступа к опросу, чтобы начать прохождение
+      </p>
+    </div>
+
+    <form method="get" action="/p/" id="poll-code-form">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <input 
+          type="text" 
+          id="code" 
+          name="code" 
+          placeholder="Например: ABC123" 
+          required 
+          autofocus
+          style="text-align: center; font-size: 1.5rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;"
+          maxlength="16"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.125rem; padding: 1rem;">
+        ➡ Перейти к опросу
+      </button>
+    </form>
+  </div>
+
+  <div class="card" style="max-width: 600px; margin: 1.5rem auto 0; background: #f0f9ff; border-left: 4px solid var(--primary);">
+    <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">💡 Как это работает?</h3>
+    <ul style="margin-left: 1.5rem; color: var(--text-light); line-height: 1.8;">
+      <li>Получите код опроса от его создателя</li>
+      <li>Введите код в форму выше</li>
+      <li>Начните прохождение опроса</li>
+      {% if user.is_authenticated %}
+        <li>Создайте свой опрос в <a href="/dashboard/project/" style="color: var(--primary); font-weight: 600;">панели управления</a></li>
+      {% else %}
+        <li><a href="/accounts/signup/" style="color: var(--primary); font-weight: 600;">Зарегистрируйтесь</a>, чтобы создавать свои опросы</li>
+      {% endif %}
+    </ul>
+  </div>
+
+  <script>
+    document.getElementById('poll-code-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim().toUpperCase();
+      if (code) {
+        window.location.href = '/p/' + code + '/';
+      }
+    });
+
+    // Автоматически переводим ввод в верхний регистр
+    document.getElementById('code').addEventListener('input', function(e) {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  </script>
+{% endblock %}

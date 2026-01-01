@@ -1,0 +1,153 @@
+{% extends "dashboard/base.html" %}
+
+{% block dashboard_title %}{{ poll.title }}{% endblock %}
+
+{% block content %}
+<div class="flex" style="gap: 0.5rem; align-items: start; flex-direction: column; margin-bottom: 1rem;">
+  <h1 style="margin: 0; font-size: 1.5rem; font-weight: 600;">{{ poll.title }}</h1>
+  
+  <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+    <a href="/dashboard/project/{{ poll.id }}/edit/" class="btn btn-outline" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+      ✏️ Редактировать
+    </a>
+    <a href="/dashboard/project/{{ poll.id }}/delete/" class="btn btn-danger" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+      🗑️ Удалить
+    </a>
+  </div>
+</div>
+
+{% if poll.description %}
+  <div style="margin: 0 0 1.5rem; color: var(--text-light); line-height: 1.5;">
+    {{ poll.description }}
+  </div>
+{% endif %}
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/dashboard/project/{{ poll.id }}/question/new/" class="btn btn-primary">➕ Добавить вопрос</a>
+</div>
+
+<div class="card">
+  <h3 style="margin-bottom: 1rem;">🔗 Доступ к опросу</h3>
+  <div class="grid grid-2" style="gap: 1rem; align-items: center;">
+    <div>
+      <label class="text-muted" style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Код доступа</label>
+      <code style="font-size: 1.25rem; padding: 0.5rem 1rem; display: inline-block;">{{ poll.access_code }}</code>
+    </div>
+    <div>
+      <label class="text-muted" style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Публичная ссылка</label>
+      <a href="/p/{{ poll.access_code }}/" target="_blank" class="btn btn-outline" style="font-size: 0.875rem;">
+        /p/{{ poll.access_code }}/
+      </a>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+    <label class="text-muted" style="display: block; margin-bottom: 0.75rem; font-size: 0.875rem;">QR-код</label>
+    <div class="flex" style="gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <img
+          src="/p/{{ poll.access_code }}/qr.png"
+          alt="QR код"
+          style="border: 2px solid var(--border); border-radius: 0.75rem; padding: 0.75rem; background: white;"
+          width="160"
+          height="160"
+        />
+        <div>
+          <p class="text-muted" style="margin: 0 0 0.5rem; font-size: 0.9rem;">Сканируйте или откройте на телефоне</p>
+          <a href="/p/{{ poll.access_code }}/qr/" target="_blank" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.95rem;">
+            📱 Открыть QR-страницу
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+    <div class="flex" style="gap: 1rem; flex-wrap: wrap;">
+      <a href="/dashboard/project/{{ poll.id }}/stats/" class="btn btn-success">
+        📊 Статистика
+      </a>
+      <a href="/dashboard/project/{{ poll.id }}/responses/" class="btn btn-outline">
+        Ответы пользователей
+      </a>
+    </div>
+  </div>
+</div>
+
+<h2 style="margin-top: 2rem; margin-bottom: 1rem;">❓ Вопросы опроса</h2>
+
+{% if questions %}
+  <div class="grid">
+    {% for q in questions %}
+      <div class="card">
+        <div class="flex flex-between" style="margin-bottom: 0.75rem;">
+          <div>
+            <span class="badge {% if q.kind == 'TEXT' %}badge-primary{% elif q.kind == 'SINGLE' %}badge-success{% else %}badge-warning{% endif %}" style="margin-right: 0.5rem;">
+              {% if q.kind == 'TEXT' %}📝 Текст
+              {% elif q.kind == 'SINGLE' %}🔘 Одиночный выбор
+              {% else %}☑️ Множественный выбор
+              {% endif %}
+            </span>
+            <strong style="font-size: 1.125rem;">Вопрос #{{ forloop.counter }}</strong>
+          </div>
+          <div class="flex" style="gap: 0.5rem;">
+            <a href="/dashboard/project/{{ poll.id }}/question/{{ q.id }}/edit/" class="btn btn-outline" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+              ✏️
+            </a>
+            <a href="/dashboard/project/{{ poll.id }}/question/{{ q.id }}/delete/" class="btn btn-danger" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+              🗑️
+            </a>
+          </div>
+        </div>
+        
+        <p style="font-size: 1.125rem; margin-bottom: 1rem;">{{ q.text }}</p>
+
+        {% if q.kind != 'TEXT' %}
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+            <div class="flex flex-between" style="margin-bottom: 0.75rem;">
+              <strong>Варианты ответа:</strong>
+              <a href="/dashboard/project/{{ poll.id }}/question/{{ q.id }}/choice/new/" class="btn btn-outline" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                ➕ Добавить вариант
+              </a>
+            </div>
+            
+            {% if q.choices.exists %}
+              <ul class="list">
+                {% for c in q.choices.all %}
+                  <li class="list-item" style="padding: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>
+                      <span style="color: var(--primary); font-weight: 600; margin-right: 0.5rem;">{{ forloop.counter }}.</span>
+                      {{ c.text }}
+                    </span>
+                    <div class="flex" style="gap: 0.5rem;">
+                      <a href="/dashboard/project/{{ poll.id }}/question/{{ q.id }}/choice/{{ c.id }}/edit/" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+                        ✏️
+                      </a>
+                      <a href="/dashboard/project/{{ poll.id }}/question/{{ q.id }}/choice/{{ c.id }}/delete/" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+                        🗑️
+                      </a>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted" style="padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
+                Пока нет вариантов ответа. Добавьте варианты, чтобы пользователи могли выбрать ответ.
+              </p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty-state">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">❓</div>
+    <h3>Пока нет вопросов</h3>
+    <p style="margin: 1rem 0 1.5rem; color: var(--text-light);">
+      Добавьте вопросы к вашему опросу, чтобы начать собирать ответы.
+    </p>
+    <a href="/dashboard/project/{{ poll.id }}/question/new/" class="btn btn-primary">Добавить первый вопрос</a>
+  </div>
+{% endif %}
+{% endblock %}

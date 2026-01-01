@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Спасибо! - Опрос завершен{% endblock %}
+
+{% block nav %}
+  <a href="/">Главная</a>
+  {% if user.is_authenticated %}
+    <a href="/dashboard/project/">Мои опросы</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <div class="card" style="max-width: 600px; margin: 0 auto; text-align: center; padding: 3rem 2rem;">
+    <div style="font-size: 5rem; margin-bottom: 1.5rem;">✅</div>
+    
+    <h1 style="margin-bottom: 1rem; color: var(--success);">Спасибо!</h1>
+    
+    <p style="font-size: 1.125rem; color: var(--text-light); margin-bottom: 2rem;">
+      Ваши ответы на опрос <strong>«{{ poll.title }}»</strong> успешно отправлены.
+    </p>
+
+    <!-- 🔹 Показываем результат ТОЛЬКО если это тест и есть вопросы с проверкой -->
+    {% if has_test_questions and submission and submission.total > 0 %}
+      <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid var(--success); border-radius: 0.5rem; padding: 1.25rem; margin-bottom: 2rem;">
+        <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">
+          {{ submission.score }} из {{ submission.total }}
+        </div>
+        <div style="color: var(--text-light); margin-top: 0.5rem;">
+          {% if submission.score == submission.total %}
+          {% elif submission.score >= submission.total|floatformat:"0"|divisibleby:2 %}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Кнопки -->
+    <div class="flex" style="justify-content: center; gap: 1rem;">
+      <a href="/" class="btn btn-primary">🏠 На главную</a>
+      {% if user.is_authenticated %}
+        <a href="/dashboard/project/" class="btn btn-outline">Мои опросы</a>
+      {% endif %}
+      {% if has_test_questions %}
+        <a href="{% url 'polls:poll_public' access_code=poll.access_code %}" class="btn btn-secondary">↻ Повторить</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

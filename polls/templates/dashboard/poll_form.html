@@ -1,0 +1,77 @@
+{% extends "dashboard/base.html" %}
+
+{% block dashboard_title %}{{ title }}{% endblock %}
+
+{% block content %}
+  <!-- Назад -->
+  {% if poll %}
+    <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-outline" style="margin-bottom: 1rem; font-size: 0.875rem;">
+      ← Назад к опросу
+    </a>
+  {% else %}
+    <a href="/dashboard/project/" class="btn btn-outline" style="margin-bottom: 1rem; font-size: 0.875rem;">
+      ← Назад к списку
+    </a>
+  {% endif %}
+
+  <!-- Заголовок по центру -->
+  <div style="text-align: center; margin-bottom: 1.75rem;">
+    <h1 style="margin: 0 0 0.5rem; font-size: 1.875rem; font-weight: 600; color: var(--text);">
+      {{ title }}
+    </h1>
+    <p class="text-muted" style="margin: 0; font-size: 1.05rem; opacity: 0.9;">
+      {% if poll %}
+        Редактирование: <strong>{{ poll.title }}</strong>
+      {% else %}
+        Создайте новый опрос и задайте первый вопрос
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- Форма -->
+  <div class="card" style="max-width: 680px; margin: 0 auto; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Блок ошибок -->
+      {% if form.errors %}
+        <div style="background: #fef6f6; border: 1px solid #f8d7da; color: #721c24; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.95rem;">
+          <strong style="display: block; margin-bottom: 0.5rem;">Пожалуйста, исправьте ошибки:</strong>
+          <ul style="margin: 0; padding-left: 1.25rem;">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}</strong> — {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- Поле: Название -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="{{ form.title.id_for_label }}" style="display: block; margin-bottom: 0.6rem; font-weight: 500; font-size: 1.125rem; color: var(--text);">Название опроса</label>
+        {{ form.title }}
+        {% if form.title.help_text %}
+          <small class="text-muted" style="display: block; margin-top: 0.4rem; font-size: 0.85rem;">{{ form.title.help_text }}</small>
+        {% endif %}
+      </div>
+
+      <!-- Поле: Описание -->
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.6rem; font-weight: 500; font-size: 1.125rem; color: var(--text);">Описание</label>
+        {{ form.description }}
+        {% if form.description.help_text %}
+          <small class="text-muted" style="display: block; margin-top: 0.4rem; font-size: 0.85rem;">{{ form.description.help_text }}</small>
+        {% endif %}
+      </div>
+
+      <!-- Кнопки -->
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap;">
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+          <span>💾</span> <span>Сохранить опрос</span>
+        </button>
+        <a href="/dashboard/project/" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500;">Отмена</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
