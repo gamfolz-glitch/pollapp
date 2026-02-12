@@ -1,4 +1,7 @@
-
+"""
+Модели приложения опросов.
+Включают опрос, вопросы, варианты, ответы и подсчёт результатов.
+"""
 
 import secrets
 import string
@@ -6,87 +9,113 @@ import string
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext_lazy as _
+from django.db.models import Max
 
-
-# ✅ Перенесите функцию СНАРУЖИ классов, и не используйте lambda
 def generate_access_code():
-    """Генерирует уникальный 8-символьный код из заглавных букв и цифр."""
     chars = string.ascii_uppercase + string.digits
-    for _ in range(10):  # Попробовать 10 раз
+    while True:
         code = "".join(secrets.choice(chars) for _ in range(8))
         if not Poll.objects.filter(access_code=code).exists():
             return code
-    raise RuntimeError("Не удалось сгенерировать уникальный код доступа")
-
 
 class Poll(models.Model):
-    title = models.CharField(max_length=200, verbose_name="Название")
-    description = models.TextField(blank=True, verbose_name="Описание")
-
+    title = models.CharField(_("Название"), max_length=200)
+    description = models.TextField(_("Описание"), blank=True)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="owned_polls",
-        verbose_name="Владелец",
+        verbose_name=_("Владелец"),
     )
-
     access_code = models.CharField(
+        _("Код доступа"),
         max_length=8,
         unique=True,
         db_index=True,
-        default=generate_access_code,  # ✅ Без lambda!
-        verbose_name="Код доступа",
+        default=generate_access_code,
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    created_at = models.DateTimeField(_("Дата создания"), auto_now_add=True)
+
+    allow_multiple_submissions = models.BooleanField(
+        _("Разрешить повторное прохождение"),
+        default=False,
+        help_text=_(
+            "Если выключено — пользователь или аноним может пройти опрос только один раз."
+        ),
+    )
+
+    time_limit_minutes = models.PositiveIntegerField(
+        _("Ограничение времени (минуты)"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Если указано — участник должен пройти опрос за указанное количество минут. Оставьте пустым — нет ограничения.")
+    )
 
     class Meta:
-        verbose_name = "Опрос"
-        verbose_name_plural = "Опросы"
+        verbose_name = _("Опрос")
+        verbose_name_plural = _("Опросы")
         ordering = ["-created_at"]
+
+    @property
+    def has_time_limit(self) -> bool:
+        return bool(self.time_limit_minutes)
+
+    @property
+    def time_limit_in_seconds(self) -> int:
+        return self.time_limit_minutes * 60 if self.has_time_limit else 0
+
+    def get_time_limit_display(self) -> str:
+        return f"{self.time_limit_minutes} мин" if self.has_time_limit else "Без ограничения"
 
     def __str__(self) -> str:
         return self.title
 
+    def __repr__(self) -> str:
+        return f"<Poll id={self.id} title='{self.title}' access_code='{self.access_code}'>"
 
 
 
 class Question(models.Model):
     class Kind(models.TextChoices):
-        TEXT = "TEXT", "Текстовый ответ"
-        SINGLE = "SINGLE", "Одиночный выбор"
-        MULTI = "MULTI", "Множественный выбор"
+        TEXT = "TEXT", _("Текстовый ответ")
+        SINGLE = "SINGLE", _("Одиночный выбор")
+        MULTI = "MULTI", _("Множественный выбор")
 
     poll = models.ForeignKey(
         Poll,
         on_delete=models.CASCADE,
         related_name="questions",
-        verbose_name="Опрос",
+        verbose_name=_("Опрос"),
     )
     text = models.CharField(
+        _("Текст вопроса"),
         max_length=500,
-        verbose_name="Текст вопроса",
-        help_text="Будет отображаться участникам опроса",
+        help_text=_("Будет отображаться участникам опроса"),
     )
     kind = models.CharField(
+        _("Тип вопроса"),
         max_length=10,
         choices=Kind.choices,
         default=Kind.TEXT,
-        verbose_name="Тип вопроса",
     )
     order = models.PositiveIntegerField(
+        _("Порядок"),
         default=1,
-        verbose_name="Порядок",
-        help_text="Чем меньше число — тем выше вопрос (начинается с 1)",
+        help_text=_("Чем меньше число — тем выше вопрос (начинается с 1)"),
     )
     is_test_question = models.BooleanField(
+        _("Тестовый вопрос"),
         default=False,
-        verbose_name="Тестовый вопрос",
-        help_text="Если включено — можно будет указать правильные варианты ответов.",
+        help_text=_("Если включено — можно будет указать правильные варианты ответов."),
     )
 
     class Meta:
+        verbose_name = _("Вопрос")
+        verbose_name_plural = _("Вопросы")
         ordering = ["order", "id"]
         constraints = [
             models.UniqueConstraint(
@@ -94,41 +123,75 @@ class Question(models.Model):
                 name="unique_order_per_poll"
             )
         ]
-        verbose_name = "Вопрос"
-        verbose_name_plural = "Вопросы"
+    def clean(self):
+        super().clean()
+        if self.kind == Question.Kind.TEXT and self.is_test_question:
+            raise ValidationError(_("Текстовые вопросы не могут быть тестовыми (нельзя проверять ответы)."))
+
+    def save(self, *args, **kwargs):
+        # Вызываем валидацию только если явно передано `validate=True`
+        validate = kwargs.pop("validate", True)
+        if validate:
+            self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.text
 
+    def __repr__(self) -> str:
+        return f"<Question id={self.id} text='{self.text[:30]}...' poll_id={self.poll_id}>"
+
+    @classmethod
+    def next_order_for_poll(cls, poll):
+        """
+        Возвращает следующий порядковый номер для вопроса в опросе.
+        """
+        max_order = cls.objects.filter(poll=poll).aggregate(
+            max_order=Max('order')
+        )['max_order']
+        return (max_order or 0) + 1
 
 class Choice(models.Model):
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
         related_name="choices",
-        verbose_name="Вопрос",
+        verbose_name=_("Вопрос"),
     )
-    text = models.CharField(
-        max_length=200,
-        verbose_name="Текст варианта",
-    )
+    text = models.CharField(_("Текст варианта"), max_length=200)
     is_correct = models.BooleanField(
+        _("Правильный ответ"),
         default=False,
-        verbose_name="Правильный ответ",
-        help_text="Отметьте, если это правильный вариант (только для тестовых вопросов).",
+        help_text=_("Отметьте, если это правильный вариант (только для тестовых вопросов)."),
     )
-
     class Meta:
+        verbose_name = _("Вариант ответа")
+        verbose_name_plural = _("Варианты ответов")
         ordering = ["text"]
-        verbose_name = "Вариант ответа"
-        verbose_name_plural = "Варианты ответов"
-
-    def save(self, *args, **kwargs):
-        # ⚠️ НЕТ self.full_clean(), НЕТ clean() — просто сохраняем
-        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.text
+
+    def __repr__(self) -> str:
+        return f"<Choice id={self.id} text='{self.text[:30]}' is_correct={self.is_correct}>"
+
+    def clean(self):
+        super().clean()
+
+        # ⚠️ если вопрос ещё не установлен — не валидируем
+        if not self.question_id:
+            return
+
+        if self.is_correct and not self.question.is_test_question:
+            raise ValidationError(
+                {"is_correct": _("Нельзя пометить вариант как правильный, если вопрос не тестовый.")}
+            )
+
+        if self.is_correct and self.question.kind == Question.Kind.TEXT:
+            raise ValidationError(
+                {"is_correct": _("Нельзя указывать правильный ответ для текстового вопроса.")}
+            )
+
 
 
 class Submission(models.Model):
@@ -136,7 +199,7 @@ class Submission(models.Model):
         Poll,
         on_delete=models.CASCADE,
         related_name="submissions",
-        verbose_name="Опрос",
+        verbose_name=_("Опрос"),
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -144,17 +207,24 @@ class Submission(models.Model):
         null=True,
         blank=True,
         related_name="poll_submissions",
-        verbose_name="Пользователь",
+        verbose_name=_("Пользователь"),
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата отправки")
 
-    # Результаты (если опрос — тест)
-    score = models.PositiveIntegerField(default=0, verbose_name="Набрано баллов")
-    total = models.PositiveIntegerField(default=0, verbose_name="Всего вопросов с проверкой")
+    created_at = models.DateTimeField(_("Дата отправки"), auto_now_add=True)
+    score = models.PositiveIntegerField(_("Набрано баллов"), default=0)
+    total = models.PositiveIntegerField(_("Всего вопросов с проверкой"), default=0)
+
+    session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        null=True,
+        db_index=True,
+        verbose_name=_("Ключ сессии"),
+    )
 
     class Meta:
-        verbose_name = "Ответ участника"
-        verbose_name_plural = "Ответы участников"
+        verbose_name = _("Ответ участника")
+        verbose_name_plural = _("Ответы участников")
         ordering = ["-created_at"]
 
     def calculate_score(self):
@@ -177,8 +247,12 @@ class Submission(models.Model):
         self.save(update_fields=["score", "total"])
 
     def __str__(self) -> str:
-        user = self.user.get_full_name() if self.user else "Аноним"
+        user = self.user.get_full_name() if self.user else _("Аноним")
         return f"{user} — {self.poll.title}"
+
+    def __repr__(self) -> str:
+        return f"<Submission id={self.id} user_id={self.user_id} poll_id={self.poll_id}>"
+
 
 
 class Answer(models.Model):
@@ -186,39 +260,40 @@ class Answer(models.Model):
         Submission,
         on_delete=models.CASCADE,
         related_name="answers",
-        verbose_name="Ответ на опрос",
+        verbose_name=_("Ответ на опрос"),
     )
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
-        verbose_name="Вопрос",
+        verbose_name=_("Вопрос"),
     )
-    text_value = models.TextField(blank=True, verbose_name="Текстовый ответ")
+    text_value = models.TextField(_("Текстовый ответ"), blank=True)
     selected_choices = models.ManyToManyField(
         Choice,
         blank=True,
-        through="AnswerChoice",
         related_name="answers",
-        verbose_name="Выбранные варианты",
+        verbose_name=_("Выбранные варианты"),
+        # Убрали `through` — не нужно без доп. полей
     )
 
     class Meta:
+        verbose_name = _("Ответ на вопрос")
+        verbose_name_plural = _("Ответы на вопросы")
         constraints = [
             models.UniqueConstraint(
                 fields=["submission", "question"],
                 name="unique_answer_per_submission_question"
             )
         ]
-        verbose_name = "Ответ на вопрос"
-        verbose_name_plural = "Ответы на вопросы"
 
     @property
     def is_correct(self) -> bool | None:
         """
+        Проверяет, правильный ли ответ.
         Возвращает:
-        - True — если ответ правильный
-        - False — если неправильный
-        - None — если вопрос не подлежит проверке
+            - True — если ответ правильный
+            - False — если неправильный
+            - None — если вопрос не подлежит проверке
         """
         if not self.question.is_test_question:
             return None
@@ -244,32 +319,5 @@ class Answer(models.Model):
         choices = ", ".join(c.text for c in self.selected_choices.all())
         return f"Выбор: {choices or '(не выбрано)'}"
 
-
-class AnswerChoice(models.Model):
-    answer = models.ForeignKey(
-        Answer,
-        on_delete=models.CASCADE,
-        related_name="selected_options",
-        verbose_name="Ответ",
-    )
-    choice = models.ForeignKey(
-        Choice,
-        on_delete=models.CASCADE,
-        related_name="used_in",
-        verbose_name="Вариант",
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["answer", "choice"],
-                name="unique_answer_choice"
-            )
-        ]
-        verbose_name = "Выбранный вариант"
-        verbose_name_plural = "Выбранные варианты"
-
-    def __str__(self) -> str:
-        return f"{self.answer} → {self.choice}"
-
-
+    def __repr__(self) -> str:
+        return f"<Answer id={self.id} submission_id={self.submission_id} question_id={self.question_id}>"

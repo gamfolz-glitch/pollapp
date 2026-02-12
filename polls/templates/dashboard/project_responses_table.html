@@ -3,78 +3,127 @@
 {% block dashboard_title %}Ответы: {{ poll.title }}{% endblock %}
 
 {% block content %}
-  <!-- Назад -->
-  <a href="{% url 'polls:project_detail' poll.id %}" class="btn btn-outline" style="margin-bottom: 1rem;">← Назад к опросу</a>
+  <!-- Навигация -->
+  <div class="mb-8">
+    <a href="{% url 'polls:project_detail' poll_id=poll.id %}"
+       class="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-all duration-300 transform hover:scale-105"
+       aria-label="Вернуться к деталям опроса">
+      <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      <span>Назад к опросу</span>
+    </a>
+  </div>
 
-  <!-- Заголовок -->
-  <div class="flex flex-between" style="align-items: start; margin-bottom: 1.5rem;">
+  <!-- Заголовок и действия -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
     <div>
-      <h1 style="margin: 0;">📋 Ответы</h1>
-      <p style="color: var(--text-light); margin: 0.5rem 0 0;">{{ poll.title }}</p>
+      <h1 class="text-3xl font-extrabold text-gray-800">Ответы пользователей</h1>
+      <h2 class="text-lg text-gray-600 mt-1">{{ poll.title }}</h2>
     </div>
-    <a href="{% url 'polls:project_stats' poll.id %}" class="btn btn-primary">📊 Статистика</a>
+    <a href="{% url 'polls:project_stats' poll_id=poll.id %}"
+       class="inline-flex items-center gap-3 mt-4 md:mt-0 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110">
+      <i class="fas fa-chart-bar" aria-hidden="true"></i>
+      <span>Статистика</span>
+    </a>
+  </div>
+
+  <!-- Общая статистика -->
+  <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-2xl shadow-xl overflow-hidden mb-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-8">
+      <div class="text-center">
+        <div class="text-5xl font-extrabold mb-2">{{ total_submissions }}</div>
+        <div class="opacity-90">Всего отправок</div>
+      </div>
+      <div class="text-center">
+        <div class="text-4xl font-bold mb-2 font-mono">{{ poll.access_code }}</div>
+        <div class="opacity-90">Код доступа</div>
+      </div>
+      <div class="text-center">
+        <a href="{% url 'polls:poll_public' access_code=poll.access_code %}" target="_blank"
+           class="underline opacity-90 hover:opacity-100 transition duration-200">
+          Публичная ссылка →
+        </a>
+      </div>
+    </div>
   </div>
 
   <!-- Индикатор режима -->
   {% if has_test_questions %}
-    <div class="info" style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #c3e6cb; margin-bottom: 1.5rem;">
-      <strong>🧪 Тестовый режим</strong> — для каждого вопроса указаны правильные ответы. Ниже показаны баллы: <code>правильные / всего</code>.
-    </div>
-  {% else %}
-    <div class="info" style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #ffeaa7; margin-bottom: 1.5rem;">
-      <strong>📝 Обычный опрос</strong> — сбор ответов без проверки. Столбец «Баллы» пуст.
-    </div>
-  {% endif %}
-
-  <!-- Таблица -->
-  {% if rows %}
-    <div class="card" style="overflow: hidden; margin-top: 1rem;">
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-              <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #495057;">#</th>
-              <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #495057;">Пользователь</th>
-              <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #495057;">Время</th>
-              <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #495057;">Баллы</th>
-              {% for q in poll.questions.all %}
-                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #495057; white-space: nowrap;">{{ q.text|truncatewords:6 }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rows %}
-              <tr style="border-bottom: 1px solid #e9ecef;">
-                <td style="padding: 0.75rem; color: #6c757d; font-weight: 500;">{{ forloop.counter }}</td>
-                <td style="padding: 0.75rem;"><strong>{{ r.username }}</strong></td>
-                <td style="padding: 0.75rem; color: #6c757d; font-size: 0.9rem;">{{ r.created_at|date:"d.m.Y H:i" }}</td>
-                <td style="padding: 0.75rem; font-weight: 600; color: {{ r.score_color }};">
-                  {% if r.score is not None and r.total is not None %}
-                    {{ r.score }}/{{ r.total }}
-                  {% else %}
-                    —
-                  {% endif %}
-                </td>
-                {% for cell in r.cells %}
-                  <td style="padding: 0.75rem; color: #212529;">{{ cell }}</td>
-                {% endfor %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <div class="flex items-start gap-3 p-4 mb-6 text-sm bg-green-50 border border-green-200 rounded-lg text-green-800"
+         role="alert" aria-live="polite">
+      <i class="fas fa-flask text-green-600 mt-0.5" aria-hidden="true"></i>
+      <div>
+        <strong class="font-medium">🧪 Тестовый режим</strong>
+        — для каждого вопроса указаны правильные ответы. Показаны баллы: 
+        <code class="bg-green-100 text-green-900 px-2 py-1 rounded font-mono text-xs">правильные / всего</code>.
       </div>
     </div>
   {% else %}
-    <div class="card empty-state" style="text-align: center; padding: 3rem 1rem; margin-top: 1rem;">
-      <div style="font-size: 4rem; color: #adb5bd;">📭</div>
-      <h3 style="margin: 0.75rem 0 0; color: var(--text);">Нет ответов</h3>
-      <p style="color: var(--text-light); max-width: 500px; margin: 0 auto;">
-        {% if poll.questions.exists %}
-          Ответы появятся здесь после первого прохождения.
-        {% else %}
-          Нет вопросов. <a href="{% url 'polls:question_new' poll.id %}" class="link">Добавьте вопрос</a>.
-        {% endif %}
-      </p>
+    <div class="flex items-start gap-3 p-4 mb-6 text-sm bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800"
+         role="alert" aria-live="polite">
+      <i class="fas fa-edit text-yellow-600 mt-0.5" aria-hidden="true"></i>
+      <div>
+        <strong class="font-medium">📝 Обычный опрос</strong>
+        — сбор ответов без проверки правильности.
+      </div>
     </div>
   {% endif %}
+
+ {% if rows %}
+  <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
+    <table class="min-w-full divide-y divide-gray-100">
+      <thead>
+        <tr class="bg-gray-50 border-b border-gray-200 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          <th class="px-4 py-3 w-12">#</th>
+          <th class="px-4 py-3">Пользователь</th>
+          <th class="px-4 py-3">Время</th>
+          <th class="px-4 py-3">Баллы</th>
+          {% for question in questions %}
+            <th class="px-4 py-3 min-w-48 lg:min-w-64">
+              <span class="block truncate max-w-xs cursor-help font-medium text-gray-800"
+                    title="{{ question.text }}">
+                {{ question.text|truncatewords:6 }}
+              </span>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for row in rows %}
+          <tr class="hover:bg-gray-50 transition-colors duration-150">
+            <td class="px-4 py-3 text-sm text-gray-500 font-medium text-center">{{ forloop.counter }}</td>
+            <td class="px-4 py-3 font-medium text-sm">{{ row.username|default:"Аноним" }}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">{{ row.created_at|date:"d.m.Y H:i" }}</td>
+            <td class="px-4 py-3 font-semibold">
+              {% if row.score is not None and row.total is not None %}
+                <span style="color: {{ row.score_color }};">{{ row.score }}/{{ row.total }}</span>
+              {% else %}
+                <span class="text-gray-400">—</span>
+              {% endif %}
+            </td>
+            {% for cell in row.cells %}
+              <td class="px-4 py-3 text-sm text-gray-800 break-words max-w-xs min-w-48 lg:min-w-64">
+                {{ cell|safe }}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="flex flex-col items-center justify-center p-10 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300 mt-6">
+    <div class="text-6xl mb-4">📭</div>
+    <h3 class="text-xl font-semibold text-gray-700 mb-2">Нет ответов</h3>
+    <p class="text-gray-500 max-w-md">
+      {% if poll.questions.exists %}
+        Ответы появятся здесь после первого прохождения.
+      {% else %}
+        Нет вопросов. 
+        <a href="{% url 'polls:question_new' poll.id %}" class="text-indigo-600 hover:text-indigo-800 font-medium underline decoration-dotted">
+          Добавьте вопрос
+        </a>.
+      {% endif %}
+    </p>
+  </div>
+{% endif %}
 {% endblock %}

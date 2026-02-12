@@ -10,7 +10,7 @@ class PollForm(forms.ModelForm):
 
     class Meta:
         model = Poll
-        fields = ["title", "description"]
+        fields = ["title", "description", "allow_multiple_submissions", "time_limit_minutes"]
         widgets = {
             "title": forms.TextInput(
                 attrs={
@@ -25,26 +25,40 @@ class PollForm(forms.ModelForm):
                     "placeholder": "Краткое описание опроса (необязательно)",
                 }
             ),
+            "allow_multiple_submissions": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
+        "time_limit_minutes": forms.NumberInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Например: 5",
+                "min": "1",
+            }
+        ),
         }
-
+        labels = {
+            "time_limit_minutes": "Ограничение времени (минуты)",
+        }
+        help_texts = {
+            "time_limit_minutes": "Количество минут на прохождение опроса. Например: 5. Оставьте пустым — ограничения нет.",
+        }
 
 class QuestionForm(forms.ModelForm):
     """
     Форма для создания и редактирования вопроса.
-    Поля: текст, тип, порядок, признак тестового вопроса.
+    Поля: текст, тип, признак тестового вопроса.
     """
 
-    # Явно объявляем is_test_question, чтобы гарантировать обработку `False` при отсутствии в POST
     is_test_question = forms.BooleanField(
-        required=False,  # ✅ Критически важно: если не отмечен — будет False, а не ошибка
+        required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         label="🧪 Тестовый вопрос",
-        help_text="Если включено — можно будет указать правильные варианты ответов."
+        help_text="Если включено — можно будет указать правильные варианты ответов.",
     )
 
     class Meta:
         model = Question
-        fields = ["text", "kind", "is_test_question", "order"]
+        fields = ["text", "kind", "is_test_question"]
         widgets = {
             "text": forms.Textarea(
                 attrs={
@@ -59,60 +73,81 @@ class QuestionForm(forms.ModelForm):
         labels = {
             "text": "Текст вопроса",
             "kind": "Тип вопроса",
-            "order": "Порядок",
         }
         help_texts = {
             "text": "Будет отображаться участникам опроса.",
             "kind": "Выберите тип ответа: текст, один выбор или несколько.",
-            "order": "Чем меньше число, тем выше вопрос в опросе. Начинается с 1.",
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Устанавливаем значение по умолчанию для порядка, если создаём новый вопрос
-        if not self.instance.pk:
-            self.fields["order"].initial = (
-                self.fields["order"].initial or 1
-            )
 
 
 
 
 class ChoiceForm(forms.ModelForm):
+    """
+    Форма для создания и редактирования варианта ответа.
+    """
+
     class Meta:
         model = Choice
         fields = ["text", "is_correct"]
 
     def __init__(self, *args, **kwargs):
-        # Получаем question и удаляем из kwargs, чтобы не передавать в super()
         self.question = kwargs.pop("question", None)
+        if self.question is None:
+            raise ValueError("ChoiceForm требует передать 'question' при инициализации.")
+
         super().__init__(*args, **kwargs)
 
-        # Подписи
         self.fields["is_correct"].label = "✅ Правильный ответ"
-        self.fields["is_correct"].help_text = "Отметьте, если это правильный вариант (только для тестовых вопросов)"
+        self.fields["is_correct"].help_text = (
+            "Отметьте, если это правильный вариант (только для тестовых вопросов)"
+        )
 
-        # Скрываем is_correct, если вопрос не тестовый
-        if self.question and not self.question.is_test_question:
-            del self.fields["is_correct"]
+        # Если вопрос не тестовый — убираем поле полностью
+        if not self.question.is_test_question:
+            self.fields.pop("is_correct", None)
 
-    def clean(self):
-        cleaned_data = super().clean()
-        is_correct = cleaned_data.get("is_correct")
+    def clean_is_correct(self):
+        """
+        Валидация чекбокса 'Правильный ответ'.
+        Вызывается ТОЛЬКО если поле есть в форме.
+        """
+        # ЯВНАЯ проверка (если чекбокс не отмечен)
+        is_correct = self.cleaned_data.get("is_correct", False)
 
-        # Используем self.question — он гарантированно есть, если передан при создании формы
-        if is_correct and self.question and not self.question.is_test_question:
+        # Если не отмечен — всё ок
+        if not is_correct:
+            return is_correct
+
+        # 🔒 Доп. защита (на случай ручной подмены POST)
+        if not self.question.is_test_question:
             raise forms.ValidationError(
-                "Нельзя отметить вариант как правильный, если вопрос не является тестовым."
+                "Нельзя отметить вариант как правильный — вопрос не тестовый."
             )
 
-        if is_correct and self.question:
-            if self.question.kind == Question.Kind.SINGLE:
-                existing = self.question.choices.filter(is_correct=True)
-                if self.instance.pk:
-                    existing = existing.exclude(pk=self.instance.pk)
-                if existing.exists():
-                    raise forms.ValidationError(
-                        "Для одиночного выбора уже есть правильный ответ. Сначала снимите метку с другого варианта."
-                    )
-        return cleaned_data
+        # 🔒 Логика для SINGLE
+        if self.question.kind == Question.Kind.SINGLE:
+            qs = self.question.choices.filter(is_correct=True)
+
+            # если редактируем — исключаем текущий вариант
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                raise forms.ValidationError(
+                    "Для вопроса с одиночным выбором может быть только один правильный вариант. "
+                    "Сначала снимите отметку с другого варианта."
+                )
+
+        return is_correct
+
+    def save(self, commit=True):
+        """
+        Сохраняем вариант и привязываем его к вопросу.
+        """
+        choice = super().save(commit=False)
+        choice.question = self.question
+        if commit:
+            choice.save()
+        return choice

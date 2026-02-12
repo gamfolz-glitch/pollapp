@@ -1,24 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - {% block dashboard_title %}{% endblock %}{% endblock %}
+{% block title %}Dashboard – {% block dashboard_title %}{% endblock %}{% endblock %}
 
 {% block nav %}
-  <a href="/">Главная</a>
-
-  <a href="{% url 'polls:project_list' %}" 
-     class="{% if request.resolver_match.url_name == 'project_list' or request.resolver_match.url_name == 'project_detail' %}active{% endif %}">
-    📋 Мои опросы
+  <a href="/" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 flex items-center gap-2 group">
+    <i class="fas fa-home group-hover:scale-110 transition-transform"></i>
+    <span class="hidden sm:inline">Главная</span>
   </a>
-
-  <a href="{% url 'polls:project_new' %}" 
-     class="{% if request.resolver_match.url_name == 'project_new' %}active{% endif %}">
-    ➕ Создать опрос
+  <a href="{% url 'polls:project_list' %}" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 flex items-center gap-2 group">
+    <i class="fas fa-clipboard-list group-hover:scale-110 transition-transform"></i>
+    <span class="hidden sm:inline">Мои опросы</span>
   </a>
-
-  <form method="post" action="{% url 'logout' %}" style="display: inline;">
-    {% csrf_token %}
-    <button type="submit" style="background: none; border: none; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background 0.2s; font-weight: 500; font-size: inherit; font-family: inherit; cursor: pointer;">
-      Выйти ({{ user.username }})
-    </button>
-  </form>
+  <a href="{% url 'polls:project_new' %}" class="btn-gradient text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 shadow-lg">
+    <i class="fas fa-plus"></i>
+    <span class="hidden sm:inline">Создать</span>
+  </a>
+<form method="post" action="{% url 'logout' %}" class="inline-flex items-center my-auto">
+  {% csrf_token %}
+  <button type="submit" class="flex items-center gap-2 text-gray-600 hover:text-indigo-600 group">
+    <i class="fas fa-sign-out-alt group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+    <span class="hidden sm:inline">Выйти</span>
+    <span class="sm:hidden">({{ user.username }})</span>
+  </button>
+</form>
+{% endblock %}
+  <!-- Глобальные стили шрифтов -->
+  <style>
+    body {
+      font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+    }
+  </style>
+{% block content %}
+  {% block dashboard_content %}{% endblock %}
 {% endblock %}

@@ -2,74 +2,87 @@
 
 {% block title %}QR-код: {{ poll.title }}{% endblock %}
 
-{% block nav %}
-  <a href="/">Главная</a>
-  {% if user.is_authenticated %}
-    <a href="/dashboard/project/">Мои опросы</a>
-    <a href="/dashboard/project/{{ poll.id }}/">Управление опросом</a>
-  {% endif %}
-{% endblock %}
-
 {% block content %}
-  <div style="max-width: 600px; margin: 0 auto;">
-    <div class="card" style="text-align: center;">
-      <h1 style="margin-bottom: 0.5rem;">📱 QR-код опроса</h1>
-      <h2 style="margin-bottom: 2rem; color: var(--text-light); font-size: 1.25rem;">{{ poll.title }}</h2>
+  <div class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-6 bg-transparent">
+    <!-- Карточка QR -->
+    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center border border-primary/10 mb-8 lg:mb-0 lg:mr-8">
+      <!-- Заголовок -->
+      <div class="mb-6">
+        <div>
+          <i class="fas fa-qrcode text-2xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">QR-код опроса</h1>
+        <h2 class="text-lg text-gray-600 mt-2 truncate">{{ poll.title }}</h2>
+      </div>
 
-      <div style="background: white; padding: 2rem; border-radius: 0.75rem; border: 2px solid var(--border); display: inline-block; margin-bottom: 2rem;">
+      <!-- QR -->
+      <div class="bg-white p-4 rounded-2xl shadow-lg border border-gray-200 inline-block mb-6">
         <img
-          src="/p/{{ poll.access_code }}/qr.png"
-          alt="QR код для опроса {{ poll.title }}"
-          width="300"
-          height="300"
-          style="display: block;"
+          src="{{ public_url }}qr.png"
+          alt="QR-код для опроса {{ poll.title }}"
+          width="240"
+          height="240"
+          class="block mx-auto rounded-lg"
         />
       </div>
 
-      <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
-        <p style="margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Публичная ссылка:</p>
-        <a href="{{ public_url }}" style="color: var(--primary); font-weight: 600; word-break: break-all; text-decoration: none;">
-          {{ public_url }}
-        </a>
+      <!-- Код доступа -->
+      <div class="mb-6 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/20">
+        <p class="text-xs text-gray-500 mb-1">Код доступа</p>
+        <code class="inline-block text-3xl font-bold text-primary bg-white px-5 py-2 rounded-xl shadow-sm border tracking-wider">
+          {{ poll.access_code|upper }}
+        </code>
       </div>
 
-      <div style="margin-bottom: 2rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
-        <p style="margin-bottom: 0.5rem; color: var(--text-light); font-size: 0.875rem;">Код доступа:</p>
-        <code style="font-size: 1.25rem; padding: 0.5rem 1rem;">{{ poll.access_code }}</code>
-      </div>
-
-      <div class="flex" style="justify-content: center; gap: 1rem; flex-wrap: wrap;">
-        <a href="/p/{{ poll.access_code }}/" class="btn btn-outline" target="_blank">
-          👁️ Открыть опрос
+      <!-- Кнопки -->
+      <div class="flex flex-col gap-3">
+        <a href="{{ public_url }}" target="_blank"
+           class="flex items-center justify-center gap-3 bg-white text-gray-700 font-medium py-3 px-5 rounded-2xl border border-gray-300 shadow hover:bg-gray-50 transition">
+          <i class="fas fa-eye"></i>
+          <span>Просмотреть</span>
         </a>
         {% if user.is_authenticated %}
-          <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-secondary">
-            ⚙️ Управление
+          <a href="{% url 'polls:project_detail' poll.id %}"
+             class="flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-medium py-3 px-5 rounded-2xl shadow hover:shadow-lg transition">
+            <i class="fas fa-cog"></i>
+            <span>Управление</span>
           </a>
         {% endif %}
       </div>
     </div>
 
-    <div class="card" style="margin-top: 1.5rem; background: #f0f9ff; border-left: 4px solid var(--primary);">
-      <h3 style="margin-bottom: 0.5rem; font-size: 1rem;">💡 Как использовать QR-код:</h3>
-      <ul style="margin-left: 1.5rem; color: var(--text-light);">
-        <li>Отсканируйте QR-код камерой телефона</li>
-        <li>Или распечатайте страницу и разместите в удобном месте</li>
-        <li>Пользователи смогут быстро перейти к опросу</li>
+    <!-- Информация справа -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full border border-gray-100">
+      <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">Как использовать</h3>
+      <ul class="space-y-5">
+        <li class="flex items-start gap-4">
+          <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i class="fas fa-mobile-alt text-blue-600"></i>
+          </div>
+          <div class="text-left">
+            <h4 class="font-semibold text-gray-800">Отсканируйте камерой</h4>
+            <p class="text-gray-600 text-sm">Откройте камеру смартфона и наведите на QR-код</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-4">
+          <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i class="fas fa-share-alt text-purple-600"></i>
+          </div>
+          <div class="text-left">
+            <h4 class="font-semibold text-gray-800">Поделитесь</h4>
+            <p class="text-gray-600 text-sm">Используйте ссылку или код для быстрого доступа</p>
+          </div>
+        </li>
       </ul>
+
+      <!-- Ссылка -->
+      <div class="mt-8 p-4 bg-gray-50 rounded-xl border">
+        <p class="text-xs text-gray-500 mb-1">Публичная ссылка</p>
+        <a href="{{ public_url }}" target="_blank"
+           class="text-primary font-medium hover:underline block text-sm break-all">
+          {{ public_url }}
+        </a>
+      </div>
     </div>
   </div>
-
-  <style>
-    @media print {
-      .header, .nav, footer, button, .btn {
-        display: none !important;
-      }
-      
-      .card {
-        box-shadow: none !important;
-        border: 1px solid #000 !important;
-      }
-    }
-  </style>
 {% endblock %}

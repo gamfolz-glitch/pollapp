@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Мои опросы{% endblock %}
+
+{% block content %}
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <!-- Заголовок -->
+    <div class="text-center mb-14">
+      <h1 class="text-6xl font-extrabold mb-6">
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+          Мои опросы
+        </span>
+      </h1>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+        Управляйте своими опросами, анализируйте ответы и делитесь результатами
+      </p>
+    </div>
+
+    <!-- Кнопка создания -->
+    <div class="flex justify-center mb-16">
+      <a href="{% url 'polls:project_new' %}"
+         class="group relative inline-flex items-center gap-5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold px-10 py-5 rounded-3xl shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/30 overflow-hidden">
+        <span class="absolute inset-0 w-0 bg-white opacity-20 rounded-3xl transition-all duration-500 group-hover:w-full"></span>
+        <i class="fas fa-plus-circle text-2xl group-hover:rotate-180 transition-transform duration-700 z-10"></i>
+        <span class="text-2xl z-10">Создать опрос</span>
+      </a>
+    </div>
+
+    <!-- Список опросов -->
+    <div id="projects-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {% for poll in polls %}
+        <div id="poll-{{ poll.pk }}"
+             class="relative bg-white rounded-2xl border border-gray-200/60 shadow-lg hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 overflow-hidden group">
+          
+          <!-- Градиентная полоса -->
+          <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
+
+          <!-- Тонкий градиентный бордер -->
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+          <!-- Контент -->
+          <div class="p-7 relative z-10">
+            <div class="flex items-start justify-between mb-5">
+              <h3 class="text-xl font-bold text-gray-800 leading-tight line-clamp-1 group-hover:text-primary transition-colors duration-300">
+                <a href="{% url 'polls:project_detail' poll.pk %}">
+                  {{ poll.title }}
+                </a>
+              </h3>
+              <div class="inline-flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-primary/15 to-accent/15 text-primary px-3 py-1.5 rounded-xl border border-primary/20 group-hover:scale-105 transition-transform duration-300">
+                <i class="fas fa-hashtag text-xs"></i>
+                {{ poll.access_code }}
+              </div>
+            </div>
+
+            {% if poll.description %}
+              <p class="text-sm text-gray-600 line-clamp-3 mb-6 leading-relaxed group-hover:text-gray-800 transition-colors duration-300">
+                {{ poll.description }}
+              </p>
+            {% else %}
+              <p class="text-sm text-gray-400 italic mb-6">Описание отсутствует</p>
+            {% endif %}
+
+            <!-- Статистика -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 hover:bg-gray-100 transition-colors duration-300">
+                <div class="text-2xl font-bold text-gray-800">{{ poll.questions.count }}</div>
+                <div class="text-xs text-gray-500">Вопросов</div>
+              </div>
+              <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 hover:bg-gray-100 transition-colors duration-300">
+                <div class="text-2xl font-bold text-success">{{ poll.submissions.count }}</div>
+                <div class="text-xs text-gray-500">Ответов</div>
+              </div>
+            </div>
+
+            <!-- Действия -->
+            <div class="space-y-2.5">
+              <a href="{% url 'polls:project_detail' poll.pk %}"
+                 class="group/button w-full flex items-center justify-center gap-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm py-3">
+                <i class="fas fa-cog text-base group-hover/button:rotate-180 transition-transform duration-700"></i>
+                <span>Управление</span>
+              </a>
+
+              <a href="{% url 'polls:project_edit' poll.pk %}"
+                 class="group/button w-full flex items-center justify-center gap-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm py-3">
+                <i class="fas fa-edit text-base group-hover/button:scale-110 transition-transform duration-300"></i>
+                <span>Редактировать</span>
+              </a>
+                
+                <form method="post" 
+                      action="{% url 'polls:project_delete' poll.pk %}"
+                      hx-post="{% url 'polls:project_delete' poll.pk %}"
+                      hx-confirm="Удалить опрос '{{ poll.title }}'? Это нельзя отменить."
+                      hx-target="#poll-{{ poll.pk }}"
+                      hx-swap="outerHTML"
+                      class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full flex items-center justify-center gap-3 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 border border-red-600 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm py-3">
+                        <i class="fas fa-trash text-base"></i>
+                        <span>Удалить</span>
+                    </button>
+                </form>
+
+              <a href="{% url 'polls:poll_public' poll.access_code %}"
+                 target="_blank"
+                 class="w-full flex items-center justify-center gap-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 shadow-sm py-3">
+                <i class="fas fa-eye text-base"></i>
+                <span>Просмотреть</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

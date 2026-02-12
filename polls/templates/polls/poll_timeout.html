@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Время вышло — {{ poll.title }}{% endblock %}
+
+{% block content %}
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center border border-primary/10">
+      <i class="fas fa-hourglass-end text-8xl text-primary mb-6 animate-pulse"></i>
+      <h2 class="text-4xl font-extrabold text-gray-800 mb-4">⏰ Время вышло!</h2>
+      
+      <p class="text-lg text-red-600 font-medium mb-3">
+        К сожалению, вы не уложились в отведённое время.
+      </p>
+      
+      <div class="space-y-2 text-gray-700">
+        <p><strong>Лимит:</strong> {{ poll.get_time_limit_display }}</p>
+        {% if elapsed %}
+          <p class="text-sm text-gray-500">Вы потратили: {{ elapsed }} мин</p>
+        {% endif %}
+      </div>
+
+      <div class="mt-10">
+        <a href="{% url 'polls:index' %}" 
+           class="group inline-flex items-center gap-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none">
+          <i class="fas fa-arrow-left group-hover:rotate-45 transition-transform"></i>
+          <span>К списку опросов</span>
+        </a>
+      </div>
+
+      <p class="text-sm text-gray-400 mt-8">
+        Страница автоматически перенаправит вас через 10 секунд.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    setTimeout(() => {
+      window.location.href = "{% url 'polls:index' %}";
+    }, 10000);
+  </script>
+
+  <style>
+    @keyframes pulse { 25% { transform: rotate(5deg) scale(1.05); } 75% { transform: rotate(-5deg) scale(0.95); } }
+    .animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+  </style>
+{% endblock %}

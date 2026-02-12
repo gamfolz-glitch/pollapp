@@ -2,106 +2,153 @@
 
 {% block title %}{{ poll.title }} - Опрос{% endblock %}
 
-{% block nav %}
-  <a href="/">Главная</a>
-  {% if user.is_authenticated %}
-    <a href="/dashboard/project/">Мои опросы</a>
-  {% endif %}
-{% endblock %}
-
 {% block content %}
-  <div class="card" style="max-width: 800px; margin: 0 auto;">
-    <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--border);">
-      <h1 style="margin-bottom: 0.5rem;">{{ poll.title }}</h1>
+  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-8 py-12 text-center">
+      <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">{{ poll.title }}</h1>
       {% if poll.description %}
-        <p style="color: var(--text-light); font-size: 1.125rem;">{{ poll.description }}</p>
+        <p class="text-white text-lg max-w-2xl mx-auto">{{ poll.description }}</p>
       {% endif %}
     </div>
 
+    <!-- Таймер -->
+    {% if time_left %}
+      <div id="poll-timer-container" class="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-yellow-200 px-8 py-4 text-center">
+        <div class="text-lg font-semibold text-yellow-800 flex items-center justify-center gap-2">
+          <i class="fas fa-hourglass-half"></i>
+          Осталось: <span id="poll-timer" class="font-mono text-xl font-bold">00:00</span>
+        </div>
+      </div>
+
+      <script>
+        let totalSeconds = {{ time_left }};
+        
+        function updateTimer() {
+          const mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+          const secs = String(totalSeconds % 60).padStart(2, '0');
+          document.getElementById('poll-timer').textContent = `${mins}:${secs}`;
+          
+          if (totalSeconds <= 0) {
+            clearInterval(timer);
+            document.querySelectorAll('form *').forEach(el => el.disabled = true);
+            document.getElementById('poll-timer-container').innerHTML = 
+              '<div class="text-red-600 font-semibold flex items-center justify-center gap-2"><i class="fas fa-clock"></i> ⏰ Время вышло! Ответы больше не принимаются.</div>';
+            
+            setTimeout(() => window.location.reload(), 2000);
+          }
+          totalSeconds--;
+        }
+        
+        const timer = setInterval(updateTimer, 1000);
+        updateTimer();
+      </script>
+    {% endif %}
+
+    <!-- Ошибки -->
     {% if errors %}
-      <div class="error" style="margin-bottom: 1.5rem;">
-        <strong>⚠️ Пожалуйста, исправьте ошибки:</strong>
-        <ul style="margin-top: 0.5rem;">
-          {% for e in errors %}
-            <li>{{ e.message }}</li>
+      <div class="m-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div class="flex items-center gap-2 text-red-800 mb-2">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>Пожалуйста, исправьте ошибки:</strong>
+        </div>
+        <ul class="mt-2 space-y-1 pl-5">
+          {% for error in errors %}
+            <li class="text-red-700 flex items-start gap-2">
+              <i class="fas fa-circle text-xs mt-2"></i>
+              {{ error.message }}
+            </li>
           {% endfor %}
         </ul>
       </div>
     {% endif %}
 
-    <form method="post">
+    <!-- Форма опроса -->
+    <form method="post" class="p-8 space-y-10">
       {% csrf_token %}
-
-      {% for q in questions %}
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
-            <span style="background: var(--primary); color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
+      
+      {% for question in questions %}
+        <div class="space-y-5">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
               {{ forloop.counter }}
-            </span>
-            <div style="flex: 1;">
-              <h3 style="margin-bottom: 0.5rem;">{{ q.text }}</h3>
-              {% if q.kind == 'TEXT' %}
-                <span class="badge badge-primary">📝 Текстовый ответ</span>
-              {% elif q.kind == 'SINGLE' %}
-                <span class="badge badge-success">🔘 Выберите один вариант</span>
-              {% else %}
-                <span class="badge badge-warning">☑️ Выберите один или несколько вариантов</span>
-              {% endif %}
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-800 text-lg leading-relaxed">{{ question.text }}</h3>
+              <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full 
+                {% if question.kind == 'TEXT' %}bg-blue-100 text-blue-800
+                {% elif question.kind == 'SINGLE' %}bg-green-100 text-green-800
+                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                {% if question.kind == 'TEXT' %}
+                  <i class="fas fa-align-left mr-1.5"></i> Текстовый ответ
+                {% elif question.kind == 'SINGLE' %}
+                  <i class="fas fa-dot-circle mr-1.5"></i> Один вариант
+                {% else %}
+                  <i class="fas fa-check-square mr-1.5"></i> Несколько вариантов
+                {% endif %}
+              </span>
             </div>
           </div>
 
-          <div style="margin-left: 2.75rem;">
-            {% if q.kind == 'TEXT' %}
-              <div class="form-group" style="margin-bottom: 0;">
-                <textarea name="q_{{ q.id }}" rows="4" placeholder="Введите ваш ответ здесь..." required></textarea>
-              </div>
-            {% elif q.kind == 'SINGLE' %}
-              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                {% for c in q.choices.all %}
-                  <label style="display: flex; align-items: center; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;">
-                    <input type="radio" name="q_{{ q.id }}" value="{{ c.id }}" required style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem; cursor: pointer;">
-                    <span style="flex: 1;">{{ c.text }}</span>
-                  </label>
-                {% endfor %}
-              </div>
-            {% elif q.kind == 'MULTI' %}
-              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                {% for c in q.choices.all %}
-                  <label style="display: flex; align-items: center; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;">
-                    <input type="checkbox" name="q_{{ q.id }}" value="{{ c.id }}" style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem; cursor: pointer;">
-                    <span style="flex: 1;">{{ c.text }}</span>
-                  </label>
-                {% endfor %}
-              </div>
+          <div class="ml-13 space-y-3">
+            {% if question.kind == 'TEXT' %}
+              <textarea 
+                name="q_{{ question.id }}"
+                rows="4"
+                required
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all duration-200 resize-y text-gray-700 placeholder-gray-500"
+                placeholder="Введите ваш ответ здесь..."></textarea>
+                
+            {% elif question.kind == 'SINGLE' %}
+              {% for choice in question.choices.all %}
+                <label class="group flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer transition-all duration-200">
+                  <div class="relative">
+                    <input 
+                      type="radio" 
+                      name="q_{{ question.id }}" 
+                      value="{{ choice.id }}"
+                      required
+                      class="sr-only peer">
+                    <div class="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-indigo-600 peer-checked:bg-indigo-600 transition-all duration-200 flex items-center justify-center">
+                      <div class="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
+                    </div>
+                  </div>
+                  <span class="ml-3 flex-1 text-gray-700 group-hover:text-indigo-900 transition-colors duration-200">{{ choice.text }}</span>
+                </label>
+              {% endfor %}
+              
+            {% elif question.kind == 'MULTI' %}
+              {% for choice in question.choices.all %}
+                <label class="group flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 cursor-pointer transition-all duration-200">
+                  <div class="relative">
+                    <input 
+                      type="checkbox" 
+                      name="q_{{ question.id }}" 
+                      value="{{ choice.id }}"
+                      class="sr-only peer">
+                    <div class="w-5 h-5 border-2 border-gray-300 rounded-md peer-checked:border-purple-600 peer-checked:bg-purple-600 transition-all duration-200 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <span class="ml-3 flex-1 text-gray-700 group-hover:text-purple-900 transition-colors duration-200">{{ choice.text }}</span>
+                </label>
+              {% endfor %}
             {% endif %}
           </div>
         </div>
       {% endfor %}
 
-      <div style="text-align: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
-        <button type="submit" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">
-          ✅ Отправить ответы
+      <div class="pt-8 mt-10 border-t border-gray-200 text-center">
+        <button 
+          type="submit"
+          class="group bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-4 px-10 rounded-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-lg">
+          <span class="flex items-center justify-center gap-2">
+            <i class="fas fa-paper-plane group-hover:animate-pulse"></i>
+            Отправить ответы
+          </span>
         </button>
       </div>
     </form>
   </div>
-
-  <style>
-    label:hover {
-      border-color: var(--primary) !important;
-      background: rgba(99, 102, 241, 0.05);
-    }
-    
-    input[type="radio"]:checked + span,
-    input[type="checkbox"]:checked + span {
-      font-weight: 600;
-    }
-    
-    label:has(input[type="radio"]:checked),
-    label:has(input[type="checkbox"]:checked) {
-      border-color: var(--primary) !important;
-      background: rgba(99, 102, 241, 0.1);
-    }
-  </style>
 {% endblock %}
-

@@ -1,0 +1,11 @@
+# Установить единый стиль окончаний строк
+* text=auto
+
+# Обеспечить LF в репозитории, CRLF — только на Windows при checkout
+*.js text
+*.json text
+*.html text
+*.css text
+
+# Предотвратить замену LF→CRLF в определённых файлах (если нужно)
+package.json text eol=lf

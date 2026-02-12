@@ -2,44 +2,67 @@
 
 {% block dashboard_title %}Удалить вопрос{% endblock %}
 
-{% block content %}
-  <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-outline" style="margin-bottom: 1.5rem;">← Назад к опросу</a>
+{% block dashboard_content %}
+  <div class="max-w-2xl mx-auto animate-fade-in">
+    <a href="{% url 'polls:project_detail' poll_id=poll.id %}" 
+       class="text-indigo-600 hover:text-indigo-700 mb-6 inline-flex items-center gap-2 transition-colors">
+      <i class="fas fa-arrow-left"></i>
+      <span>Назад к опросу</span>
+    </a>
 
-  <div class="card" style="max-width: 600px; margin: 0 auto; border-left: 4px solid var(--danger);">
-    <h1 style="color: var(--danger); margin-bottom: 1rem;">⚠️ Удаление вопроса</h1>
-    
-    <div class="error" style="margin-bottom: 1.5rem;">
-      <strong>Внимание!</strong> Вопрос и все связанные с ним варианты ответов будут удалены. Все ответы пользователей на этот вопрос также будут удалены.
-    </div>
-
-    <div style="padding: 1.5rem; background: var(--bg); border-radius: 0.5rem; margin-bottom: 1.5rem;">
-      <h3 style="margin-bottom: 0.5rem;">{{ question.text }}</h3>
-      <p style="color: var(--text-light); font-size: 0.875rem;">
-        Тип: 
-        <span class="badge {% if question.kind == 'TEXT' %}badge-primary{% elif question.kind == 'SINGLE' %}badge-success{% else %}badge-warning{% endif %}">
-          {% if question.kind == 'TEXT' %}📝 Текст
-          {% elif question.kind == 'SINGLE' %}🔘 Одиночный выбор
-          {% else %}☑️ Множественный выбор
-          {% endif %}
-        </span>
-      </p>
-      <p style="color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;">
-        Опрос: <strong>{{ poll.title }}</strong>
-      </p>
-    </div>
-
-    <form method="post">
-      {% csrf_token %}
-      <div class="flex" style="gap: 1rem;">
-        <button type="submit" class="btn btn-danger">
-          🗑️ Да, удалить вопрос
-        </button>
-        <a href="/dashboard/project/{{ poll.id }}/" class="btn btn-secondary">
-          Отмена
-        </a>
+    <div class="bg-white rounded-2xl shadow-lg border-l-4 border-red-500 p-8">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-600 text-3xl mb-4">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-red-600 mb-2">⚠️ Удаление вопроса</h1>
       </div>
-    </form>
+      
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <strong class="text-red-800 block mb-2">Внимание!</strong>
+        <p class="text-red-700 text-sm">
+          Вопрос и все связанные с ним варианты ответов будут удалены. Все ответы пользователей на этот вопрос также будут удалены.
+        </p>
+      </div>
+
+      <div class="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
+        <h3 class="font-bold text-gray-800 mb-3">{{ question.text }}</h3>
+        <div class="space-y-2 text-sm">
+          <p class="text-gray-600">
+            <strong>Тип:</strong> 
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold
+              {% if question.kind == 'TEXT' %}bg-blue-100 text-blue-700
+              {% elif question.kind == 'SINGLE' %}bg-emerald-100 text-emerald-700
+              {% else %}bg-amber-100 text-amber-700
+              {% endif %}">
+              {% if question.kind == 'TEXT' %}
+                <i class="fas fa-font"></i> Текст
+              {% elif question.kind == 'SINGLE' %}
+                <i class="fas fa-circle"></i> Одиночный выбор
+              {% else %}
+                <i class="fas fa-check-square"></i> Множественный выбор
+              {% endif %}
+            </span>
+          </p>
+          <p class="text-gray-600">
+            <strong>Опрос:</strong> {{ poll.title }}
+          </p>
+        </div>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="flex gap-4 justify-center">
+          <button type="submit" class="bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-semibold flex items-center gap-2 shadow-lg">
+            <i class="fas fa-trash"></i>
+            <span>Да, удалить вопрос</span>
+          </button>
+          <a href="{% url 'polls:project_detail' poll_id=poll.id %}" 
+             class="bg-white border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-xl hover:border-gray-400 transition-all font-semibold">
+            Отмена
+          </a>
+        </div>
+      </form>
+    </div>
   </div>
 {% endblock %}
-
-

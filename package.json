@@ -1,0 +1,14 @@
+{
+  "name": "django-polls",
+  "version": "1.0.0",
+  "description": "Опросы с Tailwind CSS",
+  "scripts": {
+    "build": "npx tailwindcss -i static_src/input.css -o frontend/static/css/dist/styles.css --minify",
+    "watch": "npx tailwindcss -i static_src/input.css -o frontend/static/css/dist/styles.css --minify --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19",
+    "postcss": "^8.4.38",
+    "autoprefixer": "^10.4.19"
+  }
+}
