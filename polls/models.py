@@ -273,7 +273,6 @@ class Answer(models.Model):
         blank=True,
         related_name="answers",
         verbose_name=_("Выбранные варианты"),
-        # Убрали `through` — не нужно без доп. полей
     )
 
     class Meta:
